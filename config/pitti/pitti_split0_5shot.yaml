@@ -1,0 +1,60 @@
+DATA:
+  data_root: /home/fruffini/mcastiello/CAPL/GFS-Seg/PITTIdevkit/PITTI
+  train_list: /home/fruffini/mcastiello/CAPL/GFS-Seg/config/pitti/train_contain_crowd_data_list.txt
+  val_list: /home/fruffini/mcastiello/CAPL/GFS-Seg/config/pitti/val_contain_crowd_data_list.txt
+  #  
+  classes: 4
+
+# 2) Parametri di training (few-shot meta-training)
+TRAIN:
+  layers: 101
+  sync_bn: False  # [deprecated] adopt syncbn or not
+  train_h: 473
+  train_w: 473
+  scale_min: 0.5  
+  scale_max: 2.0  
+  rotate_min: -10  
+  rotate_max: 10 
+  zoom_factor: 8  
+  ignore_label: 255
+  aux_weight: 0.4
+  train_gpu: [0, 1] #[0, 1, 2, 3]
+  workers: 24  # data loader workers
+  batch_size: 12 # batch size for training
+  batch_size_val: 20 # batch size for validation during training, memory and speed tradeoff
+  base_lr: 0.01
+  epochs: 50
+  start_epoch: 0
+  power: 0.9
+  momentum: 0.9
+  weight_decay: 0.0001
+  manual_seed: 321
+  print_freq: 20
+  save_freq: 10
+  save_path: exp/coco/split0_5shot/model
+  val_supp_seed_list: [123, 321, 456]
+  weight: 
+  resume: 
+  data_split: 0
+  shot: 5
+  novel_num: 1  
+  start_val_epoch: 46
+  evaluate: True
+  only_evaluate: False
+
+  ### DATASET
+  #use_pitti: True
+
+# 3) Modello e backbone
+MODEL:
+  backbone: resnet101
+  layers:   101
+  weight:   /home/fruffini/mcastiello/CAPL/GFS-Seg/initmodel/resnet101-imagenet.pth
+
+
+Distributed:
+  dist_url: tcp://127.0.0.1:6789      # o "env://" se preferisci
+  dist_backend: 'nccl'                # oppure 'gloo' se non usi NVIDIA
+  multiprocessing_distributed: False
+  world_size: 1
+  rank: 0

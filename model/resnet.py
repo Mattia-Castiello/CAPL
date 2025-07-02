@@ -181,7 +181,7 @@ def resnet18(pretrained=False, **kwargs):
     model = ResNet(BasicBlock, [2, 2, 2, 2], deep_base=False, **kwargs)
     if pretrained:
         model_path = './initmodel/resnet18_v1.pth'
-        model.load_state_dict(torch.load(model_path), strict=False)
+        model.load_state_dict(torch.load(model_path, weights_only=False), strict=False)
     return model
 
 
@@ -193,7 +193,7 @@ def resnet34(pretrained=False, **kwargs):
     """
     model = ResNet(BasicBlock, [3, 4, 6, 3], **kwargs)
     if pretrained:
-        model.load_state_dict(model_zoo.load_url(model_urls['resnet34']))
+        model.load_state_dict(torch.load(model_path, weights_only=False), strict=False)
     return model
 
 
@@ -205,9 +205,15 @@ def resnet50(pretrained=True, **kwargs):
     """
     model = ResNet(Bottleneck, [3, 4, 6, 3], **kwargs)
     if pretrained:
-        # model.load_state_dict(model_zoo.load_url(model_urls['resnet50']))
-        model_path = './initmodel/resnet50_v2.pth'
-        model.load_state_dict(torch.load(model_path), strict=False)
+        # carica checkpoint ufficiale
+        ckpt = model_zoo.load_url(model_urls['resnet50'])
+        # filtra solo le chiavi con shape corrispondente
+        model_dict = model.state_dict()
+        filtered = {k: v for k, v in ckpt.items()
+                    if k in model_dict and v.size() == model_dict[k].size()}
+        # aggiorna e carica
+        model_dict.update(filtered)
+        model.load_state_dict(model_dict)
     return model
 
 
@@ -219,9 +225,12 @@ def resnet101(pretrained=False, **kwargs):
     """
     model = ResNet(Bottleneck, [3, 4, 23, 3], **kwargs)
     if pretrained:
-        # model.load_state_dict(model_zoo.load_url(model_urls['resnet101']))
-        model_path = './initmodel/resnet101_v2.pth'
-        model.load_state_dict(torch.load(model_path), strict=False)
+        ckpt = model_zoo.load_url(model_urls['resnet101'])
+        model_dict = model.state_dict()
+        filtered = {k: v for k, v in ckpt.items()
+                    if k in model_dict and v.size() == model_dict[k].size()}
+        model_dict.update(filtered)
+        model.load_state_dict(model_dict)
     return model
 
 
@@ -235,5 +244,5 @@ def resnet152(pretrained=False, **kwargs):
     if pretrained:
         # model.load_state_dict(model_zoo.load_url(model_urls['resnet152']))
         model_path = './initmodel/resnet152_v2.pth'
-        model.load_state_dict(torch.load(model_path), strict=False)
+        model.load_state_dict(torch.load(model_path, weights_only=False), strict=False)
     return model

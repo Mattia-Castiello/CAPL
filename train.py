@@ -29,13 +29,26 @@ cv2.setNumThreads(0)
 
 def get_parser():
     parser = argparse.ArgumentParser(description='PyTorch Semantic Segmentation')
-    parser.add_argument('--config', type=str, default='config/ade20k/ade20k_pspnet50.yaml', help='config file')
-    parser.add_argument('opts', help='see config/ade20k/ade20k_pspnet50.yaml for all options', default=None, nargs=argparse.REMAINDER)
+    parser.add_argument(
+        '--config',
+        type=str,
+        default='config/pitti/pitti_split0_5shot.yaml',
+        help='path to the config file')
+    parser.add_argument(
+        'opts',
+        nargs=argparse.REMAINDER,
+        help='additional options as KEY VALUE pairs')
+    parser.add_argument(
+        '--use_pitti',
+        action='store_true',
+        help='use PITTI custom splits instead of Pascal or COCO')
     args = parser.parse_args()
-    assert args.config is not None
+    # carica YAML e sovrascrive con opts a CLI
     cfg = config.load_cfg_from_cfg_file(args.config)
-    if args.opts is not None:
+    if args.opts:
         cfg = config.merge_cfg_from_list(cfg, args.opts)
+    # inietta il flag PITTI
+    cfg.use_pitti = args.use_pitti
     return cfg
 
 
@@ -211,7 +224,7 @@ def main_worker(gpu, ngpus_per_node, argss):
         transform.Normalize(mean=mean, std=std)])
     val_data = dataset.SemData(split='val', data_root=args.data_root, data_list=args.val_list, \
           transform=val_transform, shot=args.shot, seed=args.manual_seed, \
-          data_split=args.data_split, use_coco=args.use_coco)
+          data_split=args.data_split, use_coco=args.use_coco,use_pitti=args.use_pitti)
     val_sampler = None
     val_loader = torch.utils.data.DataLoader(val_data, worker_init_fn=worker_init_fn, batch_size=args.batch_size_val, shuffle=False, num_workers=args.workers, pin_memory=True, sampler=val_sampler)
     val_supp_seed_list = args.val_supp_seed_list 
@@ -220,7 +233,7 @@ def main_worker(gpu, ngpus_per_node, argss):
         print('processing val supp with seed: ',val_supp_seed)
         val_supp_data = dataset.SemData(split='val_supp', data_root=args.data_root, data_list=args.train_list, \
             transform=val_transform, shot=args.shot, seed=val_supp_seed, \
-            data_split=args.data_split, use_coco=args.use_coco, val_shot=args.shot)      
+            data_split=args.data_split, use_coco=args.use_coco, use_pitti=args.use_pitti, val_shot=args.shot)      
         val_supp_loader = torch.utils.data.DataLoader(val_supp_data, worker_init_fn=worker_init_fn, batch_size=args.novel_num*args.shot, shuffle=False, num_workers=args.workers, pin_memory=True, sampler=val_sampler)
         val_supp_loader_list.append(val_supp_loader)
 
@@ -261,7 +274,7 @@ def main_worker(gpu, ngpus_per_node, argss):
         logger.info('Train shot: {}'.format(train_shot))
     train_data = dataset.SemData(split='train', data_root=args.data_root, data_list=args.train_list, \
         transform=train_transform, shot=train_shot, seed=args.manual_seed, \
-        data_split=args.data_split,  use_coco=args.use_coco, val_shot=args.shot)
+        data_split=args.data_split,  use_coco=args.use_coco, use_pitti=args.use_pitti, val_shot=args.shot)
 
     test_shot = 1
     train_loader = torch.utils.data.DataLoader(train_data, worker_init_fn=worker_init_fn, batch_size=args.batch_size, shuffle=(train_sampler is None), num_workers=args.workers, pin_memory=True, sampler=train_sampler, drop_last=True)
